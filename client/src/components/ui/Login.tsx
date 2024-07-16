@@ -40,6 +40,7 @@ const Login = () => {
             type="email"
             className="mt-3 rounded-lg "
             placeholder="Enter your email"
+            defaultValue={"hassan@gmail.com"}
             {...register("email")}
           />
           {errors.email && (
@@ -50,6 +51,7 @@ const Login = () => {
           <InputPwd
             className=" "
             placeholder="Enter your password"
+            defaultValue={"hassan123"}
             {...register("password")}
           />
 
