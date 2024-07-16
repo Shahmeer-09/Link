@@ -2,6 +2,7 @@ import { MdOutlineMessage } from "react-icons/md";
 import { IoIosSend } from "react-icons/io";
 import { HiOutlineInboxIn } from "react-icons/hi";
 import { userAuth } from "../../providers/Authprovider";
+import selectedChatAtom from "../../Atoms/SelectedchatAtom";
 import {
   Dropdown,
   DropdownTrigger,
@@ -9,9 +10,11 @@ import {
   DropdownItem,
   Button,
 } from "@nextui-org/react";
+import { useResetRecoilState } from "recoil";
 
 const DropDnav = () => {
 const {setSentreq, setRecieved} = userAuth()
+const setselected = useResetRecoilState(selectedChatAtom)
   return (
     <Dropdown className=" bg-transparent ">
       <DropdownTrigger>
@@ -43,6 +46,7 @@ const {setSentreq, setRecieved} = userAuth()
             onClick={()=>{
               setSentreq(true)
               setRecieved(false) 
+              setselected()
             } }
           >
             Sent requests
@@ -58,6 +62,7 @@ const {setSentreq, setRecieved} = userAuth()
               {
                 setRecieved(true) 
                 setSentreq(false)
+                setselected()
               }
             }
           >

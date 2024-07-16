@@ -1,19 +1,21 @@
 import RecievedCard from "./RecievedCard";
 import { FaArrowLeftLong } from "react-icons/fa6";
 import { userAuth } from "../../providers/Authprovider";
-import { useRecoilValue } from "recoil";
+import { useRecoilValue, useSetRecoilState } from "recoil";
 import currentUser from "../../Atoms/currentUser";
 import Customfetch from "../../utils/Customfetch";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { AxiosError } from "axios";
 import { useEffect, useState } from "react";
-
+import allChatsAtom from "../../Atoms/Allchatatom";
 const RecievedReq = () => {
+  const setallchats = useSetRecoilState(allChatsAtom);
   const { setRecieved, token } = userAuth();
   const currentuser = useRecoilValue(currentUser);
   const [from, setfrom] = useState<any>([]);
-  const [declineload, setdeclineload] = useState(false)
+  const [declineload, setdeclineload] = useState(false);
+  const [acceptload, setacceptload] = useState(false);
   useEffect(() => {
     if (currentuser?.fromReq) setfrom(currentuser?.fromReq);
   }, [currentuser]);
@@ -21,7 +23,7 @@ const RecievedReq = () => {
   const queryClient = useQueryClient();
   const handledeclinereq = async (userid: string) => {
     try {
-      setdeclineload(true)
+      setdeclineload(true);
       await Customfetch.post(
         "/user/declinereq",
         {
@@ -36,16 +38,45 @@ const RecievedReq = () => {
       );
       setfrom((prev: any) => prev.filter((obj: any) => obj._id != userid));
       queryClient.invalidateQueries({ queryKey: ["current"] });
-      setdeclineload(false)
+      setdeclineload(false);
     } catch (error) {
-      console.log(error);
       const err = error as AxiosError;
       const newerror = err.response?.data as any;
       toast.error(newerror.message);
-      setdeclineload(false)
+      setdeclineload(false);
     }
   };
-  console.log(from);
+
+  const handleacceptReq = async (userid: string) => {
+ 
+      setacceptload(true);
+      try {
+        const res = await Customfetch.post(
+          "/user/acceptReq",
+          {
+            current: currentuser?._id,
+            userid,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setallchats((prev) => [...prev, res.data.data]);
+        toast.success("chat created");
+        setRecieved(false)
+        setacceptload(false);
+      } catch (error) {
+        console.log(error);
+        const err = error as AxiosError;
+        const newerror = err.response?.data as any;
+        toast.error(newerror.message);
+        setacceptload(false);
+      }
+
+  };
   return (
     <div className="h-full w-full px-4 py-2">
       <div
@@ -55,8 +86,15 @@ const RecievedReq = () => {
         <FaArrowLeftLong />
       </div>
       {from.length != 0 ? (
-        from.map((obj:any) => (
-          <RecievedCard key={obj?.userid} user={obj}  handlesubmit={handledeclinereq} loading={declineload} />
+        from.map((obj: any) => (
+          <RecievedCard
+            key={obj?.userid}
+            user={obj}
+            handlesubmit={handledeclinereq}
+            loading={declineload}
+            acceptload={acceptload}
+            handleacceReq={handleacceptReq}
+          />
         ))
       ) : (
         <div className=" h-[80%] flex items-center justify-center  ">

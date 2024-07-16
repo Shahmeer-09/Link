@@ -6,9 +6,11 @@ interface sentreq {
   user: currentuser;
   status: string;
   handleresend: (userid:string) => void;
-  loading:boolean
+  loading:boolean,
+  removing:boolean,
+  handleRemoveReq:(userid:string)=> void;
 }
-const SentreqCard = ({ loading,user, status ,handleresend}: sentreq) => {
+const SentreqCard = ({removing,handleRemoveReq ,loading,user, status ,handleresend}: sentreq) => {
   return (
     <div className=" flex p-2 mb-2  border-b-1 border-b-zinc-300  ">
       <Avatar src={user?.Avatar} size={"sm"} />
@@ -26,7 +28,7 @@ const SentreqCard = ({ loading,user, status ,handleresend}: sentreq) => {
             Resend
           </Button>
         )}
-        <button>
+        <button onClick={()=>handleRemoveReq(user._id.toString())}  disabled={removing} >
           <FaTrashAlt className="  text-red-700  " />
         </button>
       </div>

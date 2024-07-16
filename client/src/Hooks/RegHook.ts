@@ -55,6 +55,7 @@ const RegHook = () => {
         userid: fireuser?.user.uid,
       });
       queryclient.invalidateQueries({ queryKey: ["current"] });
+      queryclient.invalidateQueries({ queryKey: ["allchats"] });
       naviagte("/chat");
       setloading(false);
     } catch (error) {

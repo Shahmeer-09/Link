@@ -4,6 +4,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "../utils/firebase";
 
 
+
 interface AuthContextProps {
   user:User|null;
   loading: boolean;
@@ -28,24 +29,40 @@ const Authprovider: React.FC<authprops> = ({ children }) => {
   const [token, settoken] = useState("");
 
  
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setuser(user);
-      const gettoken = () => {
-        return user?.getIdToken();
-      };
-      gettoken()
-        ?.then((data) => {
-          settoken(data);
+  useEffect(()=>{
+    const refreshTokenInterval = 30 * 60 * 1000;
+  const getToken = (user:User) => {
+    if (user) {
+      user.getIdToken(true) // Pass true to force refresh the token
+        .then((token:any) => {
+          settoken(token);
         })
-        .catch((err) => {
-          console.log(err);
+        .catch((error:any) => {
+          console.error('Error getting token:', error);
+        })
+        .finally(() => {
+          setloading(false);
         });
+    } else {
+      settoken("");
       setloading(false);
-    });
-    return () => unsubscribe();
-  }, []);
- 
+    }
+  };
+
+  const unsubscribe = onAuthStateChanged(auth, (user) => {
+    setuser(user);
+    getToken(user!);
+  
+    // Set up the interval to refresh the token
+    const interval = setInterval(() => {
+      getToken(user!);
+    }, refreshTokenInterval);
+
+    return () => clearInterval(interval);
+  });
+
+  return () => unsubscribe();
+}, []);
 
   const value = {
     user,

@@ -13,11 +13,7 @@ const MessageSchema = new mongoose.Schema(
       ref: "Chat",
       required: true,
     },
-    messageimage: {
-      type: String,
-      default: "",
-    },
-    mimagepublic: {
+    image: {
       type: String,
       default: "",
     },

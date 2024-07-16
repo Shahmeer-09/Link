@@ -2,8 +2,7 @@ const { badReqError, NotfoundError } = require("../utils/Customerrors");
 const Apiresponse = require("../utils/Apiresponse");
 const User = require("../model/User.model");
 const { StatusCodes } = require("http-status-codes");
-const { default: mongoose } = require("mongoose");
-
+const Chat = require("../model/Chat.model");
 const getCurrent = async (req, res) => {
   const { uid } = req.user;
   const user = await User.findOne({ userid: uid })
@@ -68,8 +67,9 @@ const sendRequest = async (req, res) => {
   if (!currentUser.toReq.find((obj) => obj.user.toString() == userid)) {
     currentUser.toReq.push({ user: userid });
   }
-  await currentUser.save();
-  res.status(200).json(new Apiresponse(StatusCodes.OK, null, "request sent"));
+  const updated =await currentUser.save()
+  await updated.populate("toReq.user")
+  res.status(200).json(new Apiresponse(StatusCodes.OK, currentUser.toReq, "request sent"));
 };
 
 const resendReq = async (req, res) => {
@@ -81,9 +81,9 @@ const resendReq = async (req, res) => {
         "toReq.$.status": "pending",
       },
     },
-    {new:true}
+    { new: true }
   ).populate("toReq.user");
-  console.log(currentUser); 
+ 
   if (!currentUser) {
     return new NotfoundError("user not found");
   }
@@ -96,26 +96,39 @@ const resendReq = async (req, res) => {
     user.fromReq.push(current);
   }
   await user.save();
-  res.status(200).json(new Apiresponse(StatusCodes.OK, currentUser?.toReq, "request resent"));
+  res
+    .status(200)
+    .json(
+      new Apiresponse(StatusCodes.OK, currentUser?.toReq, "request resent")
+    );
 };
 const accepRequest = async (req, res) => {
   const { current, userid } = req.body;
-  const user = await User.findOne({ userid });
+  const user = await User.findOne({ _id:userid });
   if (!user) {
     return new NotfoundError("user not found");
   }
-  user.toReq = user.toReq.filter((obj) => obj.user != current);
+  user.toReq = user.toReq.filter((obj) => obj.user.toString() != current.toString());
   await user.save();
-  const currentUser = await User.findOne({ userid: current });
+  const currentUser = await User.findOne({ _id: current });
   if (!currentUser) {
     return new NotfoundError("user not found");
   }
-  currentUser.fromReq = currentUser.fromReq.filter((id) => id != userid);
+  currentUser.fromReq = currentUser.fromReq.filter((id) => id.toString() != userid.toString());
   await currentUser.save();
-
-  res
+   const newchat = await Chat.create({
+    members: [current, userid],
+  });
+  if(!newchat){
+    return new badReqError("something went wrong while creating chat")
+  }
+  const CreatdChat= await Chat.findById(newchat._id).populate("members").populate("latestMessage")
+  if(!CreatdChat){
+    return new badReqError("something went wrong while creating chat")
+  }
+    res
     .status(200)
-    .json(new Apiresponse(StatusCodes.OK, null, "request accepted"));
+    .json(new Apiresponse(StatusCodes.OK,CreatdChat, "request accepted"));
 };
 const declineRequest = async (req, res) => {
   const { current: uid, userid } = req.body;
@@ -143,14 +156,19 @@ const removereq = async (req, res) => {
   if (!currentuser) {
     return new NotfoundError("user not found");
   }
-  currentuser.fromReq.filter((id) => id._id.toString() != userid);
+
+  currentuser.toReq = currentuser.toReq.filter(
+    (obj) => obj.user.toString() != userid
+  );
   await currentuser.save();
+
   const user = await User.findOne({ _id: userid });
   if (!user) {
     return new NotfoundError("user not found");
   }
-  if (!user.toReq.find((obj) => obj.user._id.toString() == current))
-    user.toReq = user.toReq.filter((obj) => obj.user._id.toString() != current);
+  if (user.fromReq.find((id) => id.toString() == current))
+    user.fromReq = user.fromReq.filter((id) => id.toString() != current);
+  await user.save();
   res.status(200).json(new Apiresponse(StatusCodes.OK, null, "removed"));
 };
 

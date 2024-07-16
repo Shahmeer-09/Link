@@ -15,11 +15,11 @@ import authSwitch from "../../Atoms/Authswitch";
 import { useRecoilValue,useSetRecoilState } from "recoil";
 import { Navigate } from "react-router-dom";
 import { userAuth } from "../../providers/Authprovider";
+import { useQueryClient } from "@tanstack/react-query";
 const Profilemodal = () => {
-
+  const queryclient = useQueryClient()
   const {setSentreq,setRecieved}  = userAuth()
   const current = useRecoilValue(currentUser);
-  // const reset = useResetRecoilState(currentUser)
   const setSwitch = useSetRecoilState(authSwitch);
   const handleLogout = async () => {
     try {
@@ -28,7 +28,13 @@ const Profilemodal = () => {
       setSwitch(true);
       setRecieved(false);
       setSentreq(false);
-    //  localStorage.clear()
+       queryclient.invalidateQueries({
+        queryKey: ["current"],
+        
+      });
+      queryclient.invalidateQueries({
+        queryKey: ["allchats"],
+      });
     } catch (error) {
       console.log(error);
     }

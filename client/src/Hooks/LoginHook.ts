@@ -39,9 +39,10 @@ const LoginHook = () => {
         const password = data.password;
          await signInWithEmailAndPassword(auth, email, password);
         
+         naviagte("/chat");
+         setloading(false);
          queryclient.invalidateQueries({ queryKey: ["current"] });
-        naviagte("/chat");
-        setloading(false);
+         queryclient.invalidateQueries({ queryKey: ["allchats"] });
       } catch (error) {
         const err = error as AuthError;
         switch (err?.code) {

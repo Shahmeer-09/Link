@@ -1,6 +1,6 @@
 import Profilemodal from "./Profilemodal";
 import  Navpop  from "./DropDnav";
-import NotificationIcon from "./NotificationIcon";
+
 const Navbar = () => {
   return (
     <nav className=" h-[50px] border-b-zinc-200 border-1 flex w-full p-2 px-3 justify-between items-center  ">
@@ -11,7 +11,7 @@ const Navbar = () => {
       </div>
       <div className="mr-4 flex gap-4 items-center ">
         <Navpop />
-        <NotificationIcon/>
+     
          <Profilemodal/>
       </div>
     </nav>

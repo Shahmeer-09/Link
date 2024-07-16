@@ -3,7 +3,7 @@ import "react-modern-drawer/dist/index.css";
 import { useRef, useState } from "react";
 import { BsSearch } from "react-icons/bs";
 import { Input } from "../input";
-import { RxCross1 } from "react-icons/rx";
+
 import Customfetch from "../../utils/Customfetch";
 import { toast } from "react-toastify";
 import { AxiosError } from "axios";
@@ -12,17 +12,25 @@ import SearchCard from "./SearchCard";
 import { type searchuser } from "./SearchCard";
 import { Spinner } from "@nextui-org/react";
 import currentUser from "../../Atoms/currentUser";
-import { useRecoilValue } from "recoil";
+import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import { useQueryClient } from "@tanstack/react-query";
+import toreratom from "../../Atoms/toReqAtom";
+import { RxCross1 } from "react-icons/rx";
+
 const Search = () => {
   const { token } = userAuth();
   const QueryClient = useQueryClient();
-  const currentuser = useRecoilValue(currentUser)
+
+  const currentuser = useRecoilValue(currentUser);
   const [isOpen, setIsOpen] = useState(false);
   const [searchinput, setsearch] = useState("");
   const [useresult, setuserReult] = useState([]);
   const [loading, setloading] = useState(false);
   const debounceTimeoutRef = useRef<any>(null);
+  const [sending, setsending] = useState(false);
+  const settoreq = useSetRecoilState(toreratom);
+
+  
 
   const toggleDrawer = () => {
     setIsOpen((prevState) => !prevState);
@@ -37,7 +45,7 @@ const Search = () => {
       if (token && query !== "") {
         const Users = await Customfetch.post(
           `/user/searchusers`,
-          { query, current:currentuser._id },
+          { query, current: currentuser._id },
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -71,18 +79,22 @@ const Search = () => {
 
   const SendMessagereq = async (userid: string) => {
     try {
-      await Customfetch.post(
+      setsending(true);
+      const res = await Customfetch.post(
         "/user/sendreq",
-        { current:currentuser._id, userid },
+        { current: currentuser._id, userid },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
+      settoreq(res?.data?.data);
+      setsending(false);
       QueryClient.invalidateQueries({ queryKey: ["current"] });
       toast.success("request sent");
     } catch (error) {
+      setsending(false);
       const err = error as AxiosError;
       const newerror = err.response?.data as any;
       toast.error(newerror.message);
@@ -113,7 +125,8 @@ const Search = () => {
               className=" hover:text-red-500 cursor-pointer"
               onClick={toggleDrawer}
             />
-          </div>
+         
+            </div>
           <div className=" w-full mt-10 ">
             <div className="  flex bg-zinc-200 rounded-md  w-[90%] mx-auto px-2 ">
               <BsSearch className=" bg-transparent  h-8 " />
@@ -144,8 +157,11 @@ const Search = () => {
                 useresult.map((user: searchuser) => (
                   <div
                     key={user._id}
-                    className="  cursor-pointer"
+                    className={` ${
+                      sending ? " cursor-wait" : "cursor-pointer"
+                    } `}
                     onClick={() => SendMessagereq(user?._id)}
+                    aria-disabled={sending}
                   >
                     <SearchCard user={user} />
                   </div>
